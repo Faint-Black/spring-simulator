@@ -27,10 +27,11 @@ const InteractivityHandler = struct {
     selected_particle: ?*Particle,
 };
 
-pub fn main () !void {
+pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
 
+    // allocate particles
     var particle_list = std.ArrayList(*Particle).init(gpa.allocator());
     defer particle_list.deinit();
     const A: *Particle = try gpa.allocator().create(Particle);
@@ -50,6 +51,7 @@ pub fn main () !void {
     defer gpa.allocator().destroy(C);
     defer gpa.allocator().destroy(D);
 
+    // allocate springs
     var spring_list = std.ArrayList(*Spring).init(gpa.allocator());
     defer spring_list.deinit();
     const AB: *Spring = try gpa.allocator().create(Spring);
@@ -69,9 +71,12 @@ pub fn main () !void {
     defer gpa.allocator().destroy(CA);
     defer gpa.allocator().destroy(CD);
 
-    var interaction_handler: InteractivityHandler = InteractivityHandler{
-        .selected_particle = null
-    };
+    var interaction_handler: InteractivityHandler = InteractivityHandler{ .selected_particle = null };
+
+    // 1% friction
+    const damping_constant: f32 = 0.99;
+    // Delta t simulation time, 60 ticks per second
+    const time_step: f32 = (1.0 / 60.0);
 
     raylib.SetTraceLogLevel(raylib.LOG_ERROR);
     raylib.SetTargetFPS(60);
@@ -84,9 +89,9 @@ pub fn main () !void {
         }
         for (particle_list.items) |particle| {
             particle.acceleration = phys.getAcceleration(particle.force, particle.mass);
-            particle.velocity = phys.getVelocity(particle.velocity, particle.acceleration, phys.time_step);
-            particle.velocity = phys.applyDamping(particle.velocity, phys.damping_constant);
-            particle.position = phys.getPosition(particle.position ,particle.velocity, phys.time_step);
+            particle.velocity = phys.getNewVelocity(particle.velocity, particle.acceleration, time_step);
+            particle.velocity = phys.applyDamping(particle.velocity, damping_constant);
+            particle.position = phys.getNewPosition(particle.position, particle.velocity, time_step);
             particle.force = phys.resetVector();
         }
 
@@ -123,11 +128,11 @@ fn applyHookeLaw(spring: *Spring) void {
 
 fn makeParticle(x: f32, y: f32, mass: f32) Particle {
     return Particle{
-        .position = phys.Vector2D{.x = x, .y = y},
+        .position = phys.Vector2D{ .x = x, .y = y },
         .mass = mass,
-        .force = phys.Vector2D{.x = 0.0, .y = 0.0},
-        .velocity = phys.Vector2D{.x = 0.0, .y = 0.0},
-        .acceleration = phys.Vector2D{.x = 0.0, .y = 0.0},
+        .force = phys.Vector2D{ .x = 0.0, .y = 0.0 },
+        .velocity = phys.Vector2D{ .x = 0.0, .y = 0.0 },
+        .acceleration = phys.Vector2D{ .x = 0.0, .y = 0.0 },
     };
 }
 
@@ -143,45 +148,29 @@ fn makeSpring(a: *Particle, b: *Particle, length: f32, k: f32) Spring {
 fn renderFrame(springList: []*Spring) void {
     raylib.ClearBackground(raylib.RAYWHITE);
     for (springList) |spring| {
-            raylib.DrawLineEx(raylib.Vector2{.x = spring.Particle_A.position.x, .y = spring.Particle_A.position.y},
-                              raylib.Vector2{.x = spring.Particle_B.position.x, .y = spring.Particle_B.position.y},
-                              5.0, raylib.GREEN);
-            raylib.DrawCircle(@intFromFloat(spring.Particle_A.position.x), 
-                              @intFromFloat(spring.Particle_A.position.y),
-                              16.0, raylib.BLACK);
-            raylib.DrawCircle(@intFromFloat(spring.Particle_B.position.x), 
-                              @intFromFloat(spring.Particle_B.position.y),
-                              16.0, raylib.BLACK);
-            raylib.DrawCircle(@intFromFloat(spring.Particle_A.position.x), 
-                              @intFromFloat(spring.Particle_A.position.y),
-                              14.0, raylib.BLUE);
-            raylib.DrawCircle(@intFromFloat(spring.Particle_B.position.x), 
-                              @intFromFloat(spring.Particle_B.position.y),
-                              14.0, raylib.BLUE);
+        raylib.DrawLineEx(raylib.Vector2{ .x = spring.Particle_A.position.x, .y = spring.Particle_A.position.y }, raylib.Vector2{ .x = spring.Particle_B.position.x, .y = spring.Particle_B.position.y }, 5.0, raylib.GREEN);
+        raylib.DrawCircle(@intFromFloat(spring.Particle_A.position.x), @intFromFloat(spring.Particle_A.position.y), 16.0, raylib.BLACK);
+        raylib.DrawCircle(@intFromFloat(spring.Particle_B.position.x), @intFromFloat(spring.Particle_B.position.y), 16.0, raylib.BLACK);
+        raylib.DrawCircle(@intFromFloat(spring.Particle_A.position.x), @intFromFloat(spring.Particle_A.position.y), 14.0, raylib.BLUE);
+        raylib.DrawCircle(@intFromFloat(spring.Particle_B.position.x), @intFromFloat(spring.Particle_B.position.y), 14.0, raylib.BLUE);
     }
 }
 
 fn handleInputs(interaction_handler: *InteractivityHandler, particleList: []*Particle) void {
     const mouse_pos: raylib.Vector2 = raylib.GetMousePosition();
-    if(interaction_handler.selected_particle) |selected_particle| {
+    if (interaction_handler.selected_particle) |selected_particle| {
         selected_particle.position.x = mouse_pos.x;
         selected_particle.position.y = mouse_pos.y;
     }
 
-    if(raylib.IsMouseButtonDown(raylib.MOUSE_LEFT_BUTTON) and (interaction_handler.selected_particle != null))
-    {
+    if (raylib.IsMouseButtonDown(raylib.MOUSE_LEFT_BUTTON) and (interaction_handler.selected_particle != null)) {
         interaction_handler.selected_particle = null;
         return;
     }
 
     for (particleList) |particle| {
-        if(raylib.IsMouseButtonDown(raylib.MOUSE_LEFT_BUTTON) and (interaction_handler.selected_particle == null))
-        {
-            if((mouse_pos.x > (particle.position.x - 10))
-            and (mouse_pos.x < (particle.position.x + 10))
-            and (mouse_pos.y > (particle.position.y - 10))
-            and (mouse_pos.y < (particle.position.y + 10)))
-            {
+        if (raylib.IsMouseButtonDown(raylib.MOUSE_LEFT_BUTTON) and (interaction_handler.selected_particle == null)) {
+            if ((mouse_pos.x > (particle.position.x - 10)) and (mouse_pos.x < (particle.position.x + 10)) and (mouse_pos.y > (particle.position.y - 10)) and (mouse_pos.y < (particle.position.y + 10))) {
                 interaction_handler.selected_particle = particle;
                 return;
             }
