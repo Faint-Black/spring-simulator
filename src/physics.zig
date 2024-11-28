@@ -22,8 +22,8 @@ pub fn resetVector() Vector2D {
 }
 
 /// get the magnitude/length/force of a vector
-pub fn getVectorMagnitude(vec: Vector2D) f32 {
-    return std.math.sqrt((vec.x * vec.x) + (vec.y * vec.y));
+pub fn getVectorMagnitude(vector: Vector2D) f32 {
+    return std.math.sqrt((vector.x * vector.x) + (vector.y * vector.y));
 }
 
 /// get the vector that goes from point A to point B

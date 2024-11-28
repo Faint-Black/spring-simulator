@@ -19,8 +19,8 @@ const Particle = struct {
 const Spring = struct {
     k: f32,
     restLen: f32,
-    Particle_A: *Particle,
-    Particle_B: *Particle,
+    particle_A: *Particle,
+    particle_B: *Particle,
 };
 
 const InteractivityHandler = struct {
@@ -107,23 +107,23 @@ pub fn main() !void {
 }
 
 fn applyHookeLaw(spring: *Spring) void {
-    const displacement_vector = phys.getVectorFromPoints(spring.Particle_A.position, spring.Particle_B.position);
-    const unit_vector_magnitude = phys.getVectorMagnitude(displacement_vector);
+    const displacement = phys.getVectorFromPoints(spring.particle_A.position, spring.particle_B.position);
+    const unit_vector_magnitude = phys.getVectorMagnitude(displacement);
     const unit_vector = phys.Vector2D{
-        .x = (displacement_vector.x / unit_vector_magnitude),
-        .y = (displacement_vector.y / unit_vector_magnitude),
+        .x = (displacement.x / unit_vector_magnitude),
+        .y = (displacement.y / unit_vector_magnitude),
     };
 
     // hooke's law
     const spring_force = phys.Vector2D{
-        .x = ((-1 * spring.k) * (displacement_vector.x - (spring.restLen * unit_vector.x))),
-        .y = ((-1 * spring.k) * (displacement_vector.y - (spring.restLen * unit_vector.y))),
+        .x = ((spring.k * -1) * (displacement.x - (spring.restLen * unit_vector.x))),
+        .y = ((spring.k * -1) * (displacement.y - (spring.restLen * unit_vector.y))),
     };
 
     const opposite_spring_force = phys.getVectorOpposite(spring_force);
 
-    spring.Particle_A.force = phys.addVectors(spring.Particle_A.force, opposite_spring_force);
-    spring.Particle_B.force = phys.addVectors(spring.Particle_B.force, spring_force);
+    spring.particle_A.force = phys.addVectors(spring.particle_A.force, opposite_spring_force);
+    spring.particle_B.force = phys.addVectors(spring.particle_B.force, spring_force);
 }
 
 fn makeParticle(x: f32, y: f32, mass: f32) Particle {
@@ -138,8 +138,8 @@ fn makeParticle(x: f32, y: f32, mass: f32) Particle {
 
 fn makeSpring(a: *Particle, b: *Particle, length: f32, k: f32) Spring {
     return Spring{
-        .Particle_A = a,
-        .Particle_B = b,
+        .particle_A = a,
+        .particle_B = b,
         .restLen = length,
         .k = k,
     };
@@ -148,11 +148,11 @@ fn makeSpring(a: *Particle, b: *Particle, length: f32, k: f32) Spring {
 fn renderFrame(springList: []*Spring) void {
     raylib.ClearBackground(raylib.RAYWHITE);
     for (springList) |spring| {
-        raylib.DrawLineEx(raylib.Vector2{ .x = spring.Particle_A.position.x, .y = spring.Particle_A.position.y }, raylib.Vector2{ .x = spring.Particle_B.position.x, .y = spring.Particle_B.position.y }, 5.0, raylib.GREEN);
-        raylib.DrawCircle(@intFromFloat(spring.Particle_A.position.x), @intFromFloat(spring.Particle_A.position.y), 16.0, raylib.BLACK);
-        raylib.DrawCircle(@intFromFloat(spring.Particle_B.position.x), @intFromFloat(spring.Particle_B.position.y), 16.0, raylib.BLACK);
-        raylib.DrawCircle(@intFromFloat(spring.Particle_A.position.x), @intFromFloat(spring.Particle_A.position.y), 14.0, raylib.BLUE);
-        raylib.DrawCircle(@intFromFloat(spring.Particle_B.position.x), @intFromFloat(spring.Particle_B.position.y), 14.0, raylib.BLUE);
+        raylib.DrawLineEx(raylib.Vector2{ .x = spring.particle_A.position.x, .y = spring.particle_A.position.y }, raylib.Vector2{ .x = spring.particle_B.position.x, .y = spring.particle_B.position.y }, 5.0, raylib.GREEN);
+        raylib.DrawCircle(@intFromFloat(spring.particle_A.position.x), @intFromFloat(spring.particle_A.position.y), 16.0, raylib.BLACK);
+        raylib.DrawCircle(@intFromFloat(spring.particle_B.position.x), @intFromFloat(spring.particle_B.position.y), 16.0, raylib.BLACK);
+        raylib.DrawCircle(@intFromFloat(spring.particle_A.position.x), @intFromFloat(spring.particle_A.position.y), 14.0, raylib.BLUE);
+        raylib.DrawCircle(@intFromFloat(spring.particle_B.position.x), @intFromFloat(spring.particle_B.position.y), 14.0, raylib.BLUE);
     }
 }
 
