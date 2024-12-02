@@ -59,14 +59,14 @@ pub fn getAcceleration(force: Vector2D, mass: f32) Vector2D {
 }
 
 /// apply the equation of motion
-pub fn getNewVelocity(oldVelocity:Vector2D, acceleration: Vector2D, timestep: f32) Vector2D {
+pub fn getNewVelocity(oldVelocity: Vector2D, acceleration: Vector2D, timestep: f32) Vector2D {
     return Vector2D{
         .x = (oldVelocity.x + (acceleration.x * timestep)),
         .y = (oldVelocity.y + (acceleration.y * timestep)),
     };
 }
 /// apply the first kinematic equation
-pub fn getNewPosition(oldPosition:Vector2D, velocity: Vector2D, timestep: f32) Vector2D {
+pub fn getNewPosition(oldPosition: Vector2D, velocity: Vector2D, timestep: f32) Vector2D {
     return Vector2D{
         .x = (oldPosition.x + (velocity.x * timestep)),
         .y = (oldPosition.y + (velocity.y * timestep)),
@@ -80,4 +80,3 @@ pub fn addVectors(a: Vector2D, b: Vector2D) Vector2D {
         .y = (a.y + b.y),
     };
 }
-

@@ -4,10 +4,12 @@
 
 const std = @import("std");
 
-/// "$ zig build test run" for full functionality
+/// "$ zig build format test run" for full functionality
+/// "$ zig build" for the bare minimum
 pub fn build(b: *std.Build) void {
+    b.exe_dir = "./";
     const exe = b.addExecutable(.{
-        .name = "executavel.out",
+        .name = "executable.out",
         .root_source_file = b.path("./src/main.zig"),
         .target = b.standardTargetOptions(.{}),
         .optimize = b.standardOptimizeOption(.{}),
@@ -16,21 +18,41 @@ pub fn build(b: *std.Build) void {
     exe.linkLibC();
     b.installArtifact(exe);
 
+    Step_Format(b);
     Step_Test(b);
     Step_Run(b, exe);
 }
 
+/// zig build format
+pub fn Step_Format(b: *std.Build) void {
+    const format_step = b.step("format", "Format the style of the zig source files");
+
+    const format_options = std.Build.Step.Fmt.Options{
+        .paths = &.{"src/"},   //where to look for source files
+        .exclude_paths = &.{}, //no exclude within src
+        .check = false,        //format file inplace
+    };
+    const performStep_format = b.addFmt(format_options);
+
+    format_step.dependOn(&performStep_format.step);
+}
+
 /// zig build test
 pub fn Step_Test(b: *std.Build) void {
-    const test_step = b.step("test", "Run zig tests");
-    const create_tests = b.addTest(.{ .root_source_file = b.path("./src/main.zig") });
-    const run_tests = b.addRunArtifact(create_tests);
-    test_step.dependOn(&run_tests.step);
+    var test_step = b.step("test", "Run zig tests");
+
+    const added_tests = b.addTest(.{ .root_source_file = b.path("./src/main.zig") });
+    const performStep_test = b.addRunArtifact(added_tests);
+
+    test_step.dependOn(&performStep_test.step);
 }
 
 /// zig build run
 pub fn Step_Run(b: *std.Build, exe: *std.Build.Step.Compile) void {
-    const run_step = b.step("run", "Run the executable");
-    const run_exe = b.addRunArtifact(exe);
-    run_step.dependOn(&run_exe.step);
+    var run_step = b.step("run", "Run the executable");
+
+    const performStep_run = b.addRunArtifact(exe);
+
+    run_step.dependOn(&performStep_run.step);
 }
+
