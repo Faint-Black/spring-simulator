@@ -4,15 +4,16 @@
 
 const std = @import("std");
 
-/// "$ zig build format test run" for full functionality
-/// "$ zig build" for the bare minimum
+/// "$ zig build format test run" for full dev functionality
+/// "$ zig build" for the install
 pub fn build(b: *std.Build) void {
-    b.exe_dir = "./";
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
     const exe = b.addExecutable(.{
-        .name = "executable.out",
+        .name = "spring-simulator",
         .root_source_file = b.path("./src/main.zig"),
-        .target = b.standardTargetOptions(.{}),
-        .optimize = b.standardOptimizeOption(.{}),
+        .target = target,
+        .optimize = optimize,
     });
     exe.linkSystemLibrary("raylib");
     exe.linkLibC();

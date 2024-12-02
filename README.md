@@ -6,7 +6,7 @@ Raylib.
 Zig 14.0-dev.
 
 ## Building
-Just run the command "zig build test run".
+Just run the command "zig build".
 
 ## Running
-The executable itself must be somewhere in the zig-out directory.
+If no --prefix was specified, the executable must be in the generated zig-out/bin directory.
